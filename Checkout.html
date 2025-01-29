@@ -1,1 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            max-width: 400px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .item:last-child {
+            border-bottom: none;
+        }
+        .total {
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .confirm {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            border-radius: 5px;
+        }
+        .confirm:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
 
+    <h1>Checkout</h1>
+    
+    <div class="container">
+        <div id="selected-items">
+            <!-- Selected items will be displayed here -->
+        </div>
+
+        <div class="total">
+            Total: <span id="total-price">R0</span>
+        </div>
+
+        <button class="confirm" onclick="confirmOrder()">Confirm Order</button>
+    </div>
+
+    <script>
+        // Function to get URL parameters
+        function getQueryParams() {
+            const params = new URLSearchParams(window.location.search);
+            return JSON.parse(decodeURIComponent(params.get("cart")));
+        }
+
+        // Function to display selected items
+        function displayItems() {
+            const itemsContainer = document.getElementById("selected-items");
+            const totalElement = document.getElementById("total-price");
+            const selectedItems = getQueryParams();
+            let total = 0;
+
+            itemsContainer.innerHTML = "";
+
+            selectedItems.forEach(item => {
+                itemsContainer.innerHTML += `
+                    <div class="item">
+                        <span>${item.name}</span>
+                        <span>R${item.price}</span>
+                    </div>
+                `;
+                total += item.price;
+            });
+
+            totalElement.textContent = `R${total}`;
+        }
+
+        // Function to confirm order
+        function confirmOrder() {
+            alert("Order Confirmed!");
+            window.location.href = "thankyou.html"; // Redirect to a thank-you page
+        }
+
+        // Load selected items on page load
+        window.onload = displayItems;
+    </script>
+
+</body>
+      </html>
