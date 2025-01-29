@@ -1,4 +1,4 @@
-<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,7 +8,6 @@
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            background-color: #f4f4f4;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -16,12 +15,22 @@
             flex-direction: column;
             overflow: hidden;
             position: relative;
+            background: linear-gradient(135deg, #007847, #ffb400, #de2010, #002395, #ffffff, #000000);
+            background-size: 600% 600%;
+            animation: backgroundShift 12s infinite alternate;
+        }
+
+        @keyframes backgroundShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
         }
         
         .splash-text {
             position: absolute;
             font-size: 32px;
             font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             opacity: 0;
             transition: opacity 1s ease-in-out;
         }
@@ -38,7 +47,7 @@
         .progress {
             width: 0%;
             height: 100%;
-            background-color: #4CAF50;
+            background-color: #ffb400;
             transition: width 6s linear;
         }
     </style>
@@ -93,4 +102,4 @@
     </script>
 
 </body>
-  </html>
+</html>
