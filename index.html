@@ -17,7 +17,7 @@
             position: relative;
             background: linear-gradient(135deg, #007847, #ffb400, #de2010, #002395, #ffffff, #000000);
             background-size: 600% 600%;
-            animation: backgroundShift 12s infinite alternate;
+            animation: backgroundShift 10s infinite alternate;
         }
 
         @keyframes backgroundShift {
@@ -32,7 +32,7 @@
             color: white;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             opacity: 0;
-            transition: opacity 1s ease-in-out;
+            transition: opacity 0.5s ease-in-out;
         }
         
         .progress-bar {
@@ -48,7 +48,7 @@
             width: 0%;
             height: 100%;
             background-color: #ffb400;
-            transition: width 6s linear;
+            transition: width 20s linear;
         }
     </style>
 </head>
@@ -62,42 +62,43 @@
 
     <script>
         const names = ["Hello", "Sawubona", "Aweh", "Dumela", "Heita", "Unjani", "Howzit", "Molo", "Ndaa", "Thobela", "Abuxeni", "Avuxeni", "Goeie dag", "Lotjhani", "Molweni"];
-        let index = 0;
         const textElement = document.getElementById("splash-text");
         const progressElement = document.getElementById("progress");
+        let index = 0;
+        const totalTime = 20000; // 20 seconds
+        const intervalTime = totalTime / names.length; // Time per name (~1.3s)
 
         function showNextName() {
             if (index < names.length) {
-                // Set new text
                 textElement.textContent = names[index];
                 index++;
 
-                // Randomize position
+                // Randomize text position
                 textElement.style.top = Math.floor(Math.random() * 60 + 20) + "%";
                 textElement.style.left = Math.floor(Math.random() * 60 + 20) + "%";
 
                 // Show text
                 textElement.style.opacity = "1";
 
-                // Animate progress bar
-                progressElement.style.width = ((index / names.length) * 100) + "%";
-
-                // Hide after 5 seconds
+                // Hide text after ~1 second
                 setTimeout(() => {
                     textElement.style.opacity = "0";
-                }, 5000);
+                }, intervalTime - 300);
 
                 // Schedule next name
-                setTimeout(showNextName, 6000);
+                setTimeout(showNextName, intervalTime);
             } else {
-                // Redirect after the last name
+                // Redirect after 20 seconds
                 setTimeout(() => {
                     window.location.href = "tenders.html";
-                }, 6000);
+                }, 500);
             }
         }
 
-        // Start the process
+        // Start progress bar animation
+        progressElement.style.width = "100%";
+
+        // Start name cycle
         showNextName();
     </script>
 
