@@ -86,19 +86,19 @@
                 setTimeout(() => {
                     textElement.style.opacity = "0";
                 }, 5000);
+
+                // Schedule next name
+                setTimeout(showNextName, 6000);
             } else {
-                // Redirect after last name
+                // Redirect after the last name
                 setTimeout(() => {
                     window.location.href = "tenders.html";
                 }, 6000);
             }
         }
 
-        // Show first name immediately
+        // Start the process
         showNextName();
-
-        // Show next name every 6 seconds
-        setInterval(showNextName, 6000);
     </script>
 
 </body>
