@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout</title>
+    <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -62,22 +63,22 @@
             Total: <span id="total-price">R0</span>
         </div>
 
-        <button class="confirm" onclick="confirmOrder()">Confirm Order</button>
+        <button id="pay-button" class="confirm">Pay with Yoco</button>
     </div>
 
     <script>
-        // Function to get URL parameters
+        let totalAmount = 0;
+
         function getQueryParams() {
             const params = new URLSearchParams(window.location.search);
             return JSON.parse(decodeURIComponent(params.get("cart")));
         }
 
-        // Function to display selected items
         function displayItems() {
             const itemsContainer = document.getElementById("selected-items");
             const totalElement = document.getElementById("total-price");
             const selectedItems = getQueryParams();
-            let total = 0;
+            totalAmount = 0;
 
             itemsContainer.innerHTML = "";
 
@@ -88,21 +89,36 @@
                         <span>R${item.price}</span>
                     </div>
                 `;
-                total += item.price;
+                totalAmount += item.price;
             });
 
-            totalElement.textContent = `R${total}`;
+            totalElement.textContent = `R${totalAmount}`;
         }
 
-        // Function to confirm order
-        function confirmOrder() {
-            alert("Order Confirmed!");
-            window.location.href = "thankyou.html"; // Redirect to a thank-you page
-        }
+        // Yoco Payment Integration
+        document.getElementById("pay-button").addEventListener("click", function() {
+            const yoco = new window.YocoSDK({
+                publicKey: "pk_test_16b69d26P4RYmO435e94"
+            });
 
-        // Load selected items on page load
+            yoco.showPopup({
+                amountInCents: totalAmount * 100, // Convert to cents
+                currency: "ZAR",
+                name: "Your Store",
+                description: "Order Payment",
+                callback: function(result) {
+                    if (result.error) {
+                        alert("Payment failed: " + result.error.message);
+                    } else {
+                        alert("Payment successful! Transaction ID: " + result.id);
+                        window.location.href = "thankyou.html"; // Redirect to Thank You page
+                    }
+                }
+            });
+        });
+
         window.onload = displayItems;
     </script>
 
 </body>
-      </html>
+    </html>
