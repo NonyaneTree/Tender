@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout</title>
-    <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
+    <title>Driver Orders</title>
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.21.0/maps/maps-web.min.js"></script>
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.21.0/services/services-web.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -15,24 +16,21 @@
             color: #333;
         }
         .container {
-            max-width: 400px;
+            max-width: 500px;
             margin: 20px auto;
             background: white;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        .item {
-            display: flex;
-            justify-content: space-between;
+        .order-details {
+            text-align: left;
+        }
+        .order-item {
             padding: 10px;
             border-bottom: 1px solid #ddd;
         }
-        .total {
-            font-weight: bold;
-            margin-top: 20px;
-        }
-        .confirm, .pay-button {
+        .accept-button {
             margin-top: 20px;
             padding: 10px 20px;
             background: #4CAF50;
@@ -42,135 +40,113 @@
             font-size: 18px;
             border-radius: 5px;
         }
-        .confirm:hover, .pay-button:hover {
+        .accept-button:hover {
             background: #45a049;
         }
-        .driver-status {
-            margin-top: 20px;
-            font-weight: bold;
-            color: red;
-        }
-        input, select {
+        #map {
             width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            height: 400px;
+            margin-top: 20px;
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
 
-    <h1>Checkout</h1>
-    
+    <h1>Driver Orders</h1>
+
     <div class="container">
-        <div id="selected-items">
-            <!-- Selected items will be displayed here -->
+        <h3>Order Details</h3>
+        <div id="order-info" class="order-details">
+            <p><strong>Delivery Address:</strong> <span id="address"></span></p>
+            <p><strong>City:</strong> <span id="city"></span></p>
+            <p><strong>Postal Code:</strong> <span id="postal"></span></p>
+            <h4>Items:</h4>
+            <div id="order-items"></div>
         </div>
 
-        <div class="total">
-            Total: <span id="total-price">R0</span>
-        </div>
-
-        <!-- Customer Location Input -->
-        <h3>Delivery Address</h3>
-        <input type="text" id="address" placeholder="Street Address" required>
-        <input type="text" id="city" placeholder="City" required>
-        <input type="text" id="postal" placeholder="Postal Code" required>
-
-        <button id="confirm-location" class="confirm">Confirm Location</button>
-
-        <!-- Driver Status -->
-        <p class="driver-status" id="driver-status">Waiting for driver...</p>
-
-        <button id="pay-button" class="pay-button" disabled>Pay with Yoco</button>
+        <button id="accept-order" class="accept-button">Accept Order</button>
     </div>
 
-    <script>
-        let totalAmount = 0;
+    <div id="map"></div>
 
+    <script>
         function getQueryParams() {
             const params = new URLSearchParams(window.location.search);
-            return JSON.parse(decodeURIComponent(params.get("cart")));
+            return JSON.parse(decodeURIComponent(params.get("order")));
         }
 
-        function displayItems() {
-            const itemsContainer = document.getElementById("selected-items");
-            const totalElement = document.getElementById("total-price");
-            const selectedItems = getQueryParams();
-            totalAmount = 0;
+        function displayOrder() {
+            const orderData = getQueryParams();
+            document.getElementById("address").textContent = orderData.location.address;
+            document.getElementById("city").textContent = orderData.location.city;
+            document.getElementById("postal").textContent = orderData.location.postal;
 
-            itemsContainer.innerHTML = "";
-
-            selectedItems.forEach(item => {
-                itemsContainer.innerHTML += `
-                    <div class="item">
-                        <span>${item.name}</span>
-                        <span>R${item.price}</span>
-                    </div>
-                `;
-                totalAmount += item.price;
+            const orderItemsContainer = document.getElementById("order-items");
+            orderItemsContainer.innerHTML = "";
+            orderData.items.forEach(item => {
+                orderItemsContainer.innerHTML += `<div class="order-item">${item.name} - R${item.price}</div>`;
             });
 
-            totalElement.textContent = `R${totalAmount}`;
+            initMap(orderData.location);
         }
 
-        document.getElementById("confirm-location").addEventListener("click", function() {
-            const address = document.getElementById("address").value;
-            const city = document.getElementById("city").value;
-            const postal = document.getElementById("postal").value;
-
-            if (!address || !city || !postal) {
-                alert("Please enter your full address.");
-                return;
-            }
-
-            const orderDetails = {
-                location: { address, city, postal },
-                items: getQueryParams()
-            };
-
-            // Send order to driver
-            const orderQuery = encodeURIComponent(JSON.stringify(orderDetails));
-            window.location.href = `driver.html?order=${orderQuery}`;
+        document.getElementById("accept-order").addEventListener("click", function() {
+            alert("Order accepted! Navigate to the customer.");
+            window.location.href = `checkout.html?acceptedOrder=true`;
         });
 
-        // Check if driver accepted order
-        function checkDriverStatus() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.has("acceptedOrder")) {
-                document.getElementById("driver-status").textContent = "Driver Accepted!";
-                document.getElementById("driver-status").style.color = "green";
-                document.getElementById("pay-button").disabled = false;
+        function initMap(location) {
+            const map = tt.map({
+                key: "YOUR_TOMTOM_API_KEY",
+                container: "map",
+                center: { lat: -26.2041, lng: 28.0473 }, // Default center (Johannesburg)
+                zoom: 12
+            });
+
+            const customerMarker = new tt.Marker()
+                .setLngLat([28.0473, -26.2041])
+                .addTo(map);
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const driverLocation = [position.coords.longitude, position.coords.latitude];
+
+                    const driverMarker = new tt.Marker({ color: "blue" })
+                        .setLngLat(driverLocation)
+                        .addTo(map);
+
+                    map.setCenter(driverLocation);
+
+                    calculateRoute(driverLocation, [28.0473, -26.2041], map);
+                });
             }
         }
 
-        // Yoco Payment Integration
-        document.getElementById("pay-button").addEventListener("click", function() {
-            const yoco = new window.YocoSDK({
-                publicKey: "pk_test_16b69d26P4RYmO435e94"
-            });
-
-            yoco.showPopup({
-                amountInCents: totalAmount * 100, // Convert to cents
-                currency: "ZAR",
-                name: "Your Store",
-                description: "Order Payment",
-                callback: function(result) {
-                    if (result.error) {
-                        alert("Payment failed: " + result.error.message);
-                    } else {
-                        alert("Payment successful! Transaction ID: " + result.id);
-                        window.location.href = "thankyou.html"; // Redirect to Thank You page
+        function calculateRoute(driverLocation, customerLocation, map) {
+            tt.services.calculateRoute({
+                key: "YOUR_TOMTOM_API_KEY",
+                locations: `${driverLocation.join(",")}:${customerLocation.join(",")}`,
+                travelMode: "car"
+            })
+            .then(response => {
+                const geojson = response.toGeoJson();
+                map.addLayer({
+                    id: "route",
+                    type: "line",
+                    source: {
+                        type: "geojson",
+                        data: geojson
+                    },
+                    paint: {
+                        "line-color": "#ff0000",
+                        "line-width": 5
                     }
-                }
+                });
             });
-        });
+        }
 
-        window.onload = function() {
-            displayItems();
-            checkDriverStatus();
-        };
+        window.onload = displayOrder;
     </script>
 
 </body>
