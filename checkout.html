@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout</title>
+    <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
+            background-color: #f4f4f4;
         }
         h1 {
             color: #333;
@@ -30,68 +32,76 @@
             font-weight: bold;
             margin-top: 20px;
         }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 16px;
-        }
-        button {
+        .confirm, .pay-button {
+            margin-top: 20px;
+            padding: 10px 20px;
             background: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
+            font-size: 18px;
+            border-radius: 5px;
         }
-        button:hover {
+        .confirm:hover, .pay-button:hover {
             background: #45a049;
         }
-        #map {
-            width: 100%;
-            height: 300px;
+        .driver-status {
             margin-top: 20px;
+            font-weight: bold;
+            color: red;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
     </style>
-    <link rel="stylesheet" href="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps.css">
-    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps-web.min.js"></script>
 </head>
 <body>
 
     <h1>Checkout</h1>
     
     <div class="container">
-        <div id="selected-items"></div>
+        <div id="selected-items">
+            <!-- Selected items will be displayed here -->
+        </div>
 
         <div class="total">
             Total: <span id="total-price">R0</span>
         </div>
 
-        <h3>Enter Your Location</h3>
-        <input type="text" id="address" placeholder="Street Address">
-        <input type="text" id="city" placeholder="City">
-        <input type="text" id="postal" placeholder="Postal Code">
-        
-        <div id="map"></div>
+        <!-- Customer Location Input -->
+        <h3>Delivery Address</h3>
+        <input type="text" id="address" placeholder="Street Address" required>
+        <input type="text" id="city" placeholder="City" required>
+        <input type="text" id="postal" placeholder="Postal Code" required>
 
-        <button onclick="confirmOrder()">Confirm Order</button>
+        <button id="confirm-location" class="confirm">Confirm Location</button>
+
+        <!-- Driver Status -->
+        <p class="driver-status" id="driver-status">Waiting for driver...</p>
+
+        <button id="pay-button" class="pay-button" disabled>Pay with Yoco</button>
     </div>
 
     <script>
-        let selectedItems = [];
-        let userLocation = { lat: -26.2041, lon: 28.0473 }; // Default to Johannesburg
+        let totalAmount = 0;
 
-        // Get items from URL
         function getQueryParams() {
             const params = new URLSearchParams(window.location.search);
-            return JSON.parse(decodeURIComponent(params.get("cart") || "[]"));
+            return JSON.parse(decodeURIComponent(params.get("cart")));
         }
 
         function displayItems() {
             const itemsContainer = document.getElementById("selected-items");
             const totalElement = document.getElementById("total-price");
-            selectedItems = getQueryParams();
-            let total = 0;
+            const selectedItems = getQueryParams();
+            totalAmount = 0;
 
             itemsContainer.innerHTML = "";
+
             selectedItems.forEach(item => {
                 itemsContainer.innerHTML += `
                     <div class="item">
@@ -99,51 +109,67 @@
                         <span>R${item.price}</span>
                     </div>
                 `;
-                total += item.price;
+                totalAmount += item.price;
             });
 
-            totalElement.textContent = `R${total}`;
+            totalElement.textContent = `R${totalAmount}`;
         }
 
-        function confirmOrder() {
+        document.getElementById("confirm-location").addEventListener("click", function() {
             const address = document.getElementById("address").value;
             const city = document.getElementById("city").value;
             const postal = document.getElementById("postal").value;
 
             if (!address || !city || !postal) {
-                alert("Please enter your complete address.");
+                alert("Please enter your full address.");
                 return;
             }
 
-            const orderData = {
-                items: selectedItems,
-                location: { address, city, postal, lat: userLocation.lat, lon: userLocation.lon }
+            const orderDetails = {
+                location: { address, city, postal },
+                items: getQueryParams()
             };
 
-            const orderQuery = encodeURIComponent(JSON.stringify(orderData));
+            // Send order to driver
+            const orderQuery = encodeURIComponent(JSON.stringify(orderDetails));
             window.location.href = `driver.html?order=${orderQuery}`;
+        });
+
+        // Check if driver accepted order
+        function checkDriverStatus() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has("acceptedOrder")) {
+                document.getElementById("driver-status").textContent = "Driver Accepted!";
+                document.getElementById("driver-status").style.color = "green";
+                document.getElementById("pay-button").disabled = false;
+            }
         }
 
-        // Initialize TomTom Map
-        function initMap() {
-            const map = tt.map({
-                key: "YOUR_TOMTOM_API_KEY", // Replace with your API Key
-                container: "map",
-                center: [userLocation.lon, userLocation.lat],
-                zoom: 10
+        // Yoco Payment Integration
+        document.getElementById("pay-button").addEventListener("click", function() {
+            const yoco = new window.YocoSDK({
+                publicKey: "pk_test_16b69d26P4RYmO435e94"
             });
 
-            const marker = new tt.Marker().setLngLat([userLocation.lon, userLocation.lat]).addTo(map);
-
-            map.on("click", (event) => {
-                userLocation = { lat: event.lngLat.lat, lon: event.lngLat.lng };
-                marker.setLngLat([userLocation.lon, userLocation.lat]);
+            yoco.showPopup({
+                amountInCents: totalAmount * 100, // Convert to cents
+                currency: "ZAR",
+                name: "Your Store",
+                description: "Order Payment",
+                callback: function(result) {
+                    if (result.error) {
+                        alert("Payment failed: " + result.error.message);
+                    } else {
+                        alert("Payment successful! Transaction ID: " + result.id);
+                        window.location.href = "thankyou.html"; // Redirect to Thank You page
+                    }
+                }
             });
-        }
+        });
 
-        window.onload = function () {
+        window.onload = function() {
             displayItems();
-            initMap();
+            checkDriverStatus();
         };
     </script>
 
