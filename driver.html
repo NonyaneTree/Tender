@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Orders</title>
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.19.0/maps/maps-web.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .nav {
+            background-color: #333;
+            padding: 10px 0;
+        }
+        .nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .nav ul li {
+            display: inline;
+        }
+        .nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            padding: 10px 15px;
+            transition: background 0.3s;
+        }
+        .nav ul li a:hover {
+            background-color: #575757;
+            border-radius: 5px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .order {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        .order:last-child {
+            border-bottom: none;
+        }
+        .order p {
+            margin: 5px 0;
+        }
+        .confirm-btn {
+            background-color: green;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .confirm-btn:hover {
+            background-color: darkgreen;
+        }
+        #map {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="nav">
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="profile.html">Profile</a></li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <h1>Driver Orders</h1>
+        <p><i>Below are all reserved orders. Click "Confirm Order" to navigate.</i></p>
+
+        <div id="orders-list">
+            <!-- Orders will be dynamically added here -->
+        </div>
+    </div>
+
+    <!-- TomTom Map -->
+    <div id="map"></div>
+
+    <script>
+        let orders = [
+            { id: 1, customer: "John Doe", location: "123 Main St, City A", lat: -25.874, lng: 28.234 },
+            { id: 2, customer: "Alice Smith", location: "456 Elm St, City B", lat: -26.142, lng: 27.983 },
+            { id: 3, customer: "Michael Brown", location: "789 Oak St, City C", lat: -26.543, lng: 28.124 }
+        ];
+
+        let driverLat, driverLng; // Driver's location
+        let map, routeLayer;
+        let tomtomKey = "YOUR_TOMTOM_API_KEY"; // Replace with your TomTom API Key
+
+        // Initialize TomTom Map
+        function initMap() {
+            map = tt.map({
+                key: tomtomKey,
+                container: "map",
+                center: [28.234, -25.874], // Default center
+                zoom: 10
+            });
+
+            // Get Driver's Location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    driverLat = position.coords.latitude;
+                    driverLng = position.coords.longitude;
+
+                    map.setCenter([driverLng, driverLat]); // Center on driver
+                    new tt.Marker().setLngLat([driverLng, driverLat]).addTo(map);
+                });
+            }
+        }
+
+        // Load Orders
+        function loadOrders() {
+            let ordersList = document.getElementById("orders-list");
+            ordersList.innerHTML = "";
+
+            orders.forEach(order => {
+                let orderDiv = document.createElement("div");
+                orderDiv.classList.add("order");
+                orderDiv.innerHTML = `
+                    <p><strong>Customer:</strong> ${order.customer}</p>
+                    <p><strong>Location:</strong> ${order.location}</p>
+                    <p><strong>Coordinates:</strong> ${order.lat}, ${order.lng}</p>
+                    <button class="confirm-btn" onclick="confirmOrder(${order.id}, ${order.lat}, ${order.lng})">Confirm Order</button>
+                `;
+                ordersList.appendChild(orderDiv);
+            });
+        }
+
+        // Confirm Order and Show Route
+        function confirmOrder(orderId, customerLat, customerLng) {
+            let confirmedOrder = orders.find(order => order.id === orderId);
+            if (confirmedOrder) {
+                alert(`Navigating to ${confirmedOrder.customer} at ${confirmedOrder.location}.`);
+
+                // Remove order from list
+                orders = orders.filter(order => order.id !== orderId);
+                loadOrders();
+
+                // Show route on map
+                if (driverLat && driverLng) {
+                    showRoute(driverLat, driverLng, customerLat, customerLng);
+                } else {
+                    alert("Driver location not available.");
+                }
+            }
+        }
+
+        // Show Route on TomTom Map
+        function showRoute(startLat, startLng, endLat, endLng) {
+            fetch(`https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${endLat},${endLng}/json?key=${tomtomKey}`)
+                .then(response => response.json())
+                .then(data => {
+                    let route = data.routes[0].legs[0].points.map(point => [point.longitude, point.latitude]);
+
+                    if (routeLayer) {
+                        map.removeLayer(routeLayer);
+                    }
+
+                    routeLayer = new tt.Layer({
+                        type: 'line',
+                        paint: {
+                            "line-color": "#FF0000",
+                            "line-width": 5
+                        },
+                        source: {
+                            type: "geojson",
+                            data: {
+                                type: "Feature",
+                                geometry: {
+                                    type: "LineString",
+                                    coordinates: route
+                                }
+                            }
+                        }
+                    });
+
+                    map.addLayer(routeLayer);
+                })
+                .catch(error => alert("Error loading route: " + error));
+        }
+
+        window.onload = () => {
+            initMap();
+            loadOrders();
+        };
+    </script>
+
+</body>
+</html>
