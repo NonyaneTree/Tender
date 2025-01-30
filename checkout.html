@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout</title>
-    <script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            background-color: #f4f4f4;
         }
         h1 {
             color: #333;
@@ -28,60 +26,72 @@
             padding: 10px;
             border-bottom: 1px solid #ddd;
         }
-        .item:last-child {
-            border-bottom: none;
-        }
         .total {
             font-weight: bold;
             margin-top: 20px;
         }
-        .confirm {
-            margin-top: 20px;
-            padding: 10px 20px;
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        button {
             background: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
-            font-size: 18px;
-            border-radius: 5px;
         }
-        .confirm:hover {
+        button:hover {
             background: #45a049;
         }
+        #map {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+        }
     </style>
+    <link rel="stylesheet" href="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps.css">
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps-web.min.js"></script>
 </head>
 <body>
 
     <h1>Checkout</h1>
     
     <div class="container">
-        <div id="selected-items">
-            <!-- Selected items will be displayed here -->
-        </div>
+        <div id="selected-items"></div>
 
         <div class="total">
             Total: <span id="total-price">R0</span>
         </div>
 
-        <button id="pay-button" class="confirm">Pay with Yoco</button>
+        <h3>Enter Your Location</h3>
+        <input type="text" id="address" placeholder="Street Address">
+        <input type="text" id="city" placeholder="City">
+        <input type="text" id="postal" placeholder="Postal Code">
+        
+        <div id="map"></div>
+
+        <button onclick="confirmOrder()">Confirm Order</button>
     </div>
 
     <script>
-        let totalAmount = 0;
+        let selectedItems = [];
+        let userLocation = { lat: -26.2041, lon: 28.0473 }; // Default to Johannesburg
 
+        // Get items from URL
         function getQueryParams() {
             const params = new URLSearchParams(window.location.search);
-            return JSON.parse(decodeURIComponent(params.get("cart")));
+            return JSON.parse(decodeURIComponent(params.get("cart") || "[]"));
         }
 
         function displayItems() {
             const itemsContainer = document.getElementById("selected-items");
             const totalElement = document.getElementById("total-price");
-            const selectedItems = getQueryParams();
-            totalAmount = 0;
+            selectedItems = getQueryParams();
+            let total = 0;
 
             itemsContainer.innerHTML = "";
-
             selectedItems.forEach(item => {
                 itemsContainer.innerHTML += `
                     <div class="item">
@@ -89,36 +99,53 @@
                         <span>R${item.price}</span>
                     </div>
                 `;
-                totalAmount += item.price;
+                total += item.price;
             });
 
-            totalElement.textContent = `R${totalAmount}`;
+            totalElement.textContent = `R${total}`;
         }
 
-        // Yoco Payment Integration
-        document.getElementById("pay-button").addEventListener("click", function() {
-            const yoco = new window.YocoSDK({
-                publicKey: "pk_test_16b69d26P4RYmO435e94"
+        function confirmOrder() {
+            const address = document.getElementById("address").value;
+            const city = document.getElementById("city").value;
+            const postal = document.getElementById("postal").value;
+
+            if (!address || !city || !postal) {
+                alert("Please enter your complete address.");
+                return;
+            }
+
+            const orderData = {
+                items: selectedItems,
+                location: { address, city, postal, lat: userLocation.lat, lon: userLocation.lon }
+            };
+
+            const orderQuery = encodeURIComponent(JSON.stringify(orderData));
+            window.location.href = `driver.html?order=${orderQuery}`;
+        }
+
+        // Initialize TomTom Map
+        function initMap() {
+            const map = tt.map({
+                key: "YOUR_TOMTOM_API_KEY", // Replace with your API Key
+                container: "map",
+                center: [userLocation.lon, userLocation.lat],
+                zoom: 10
             });
 
-            yoco.showPopup({
-                amountInCents: totalAmount * 100, // Convert to cents
-                currency: "ZAR",
-                name: "Your Store",
-                description: "Order Payment",
-                callback: function(result) {
-                    if (result.error) {
-                        alert("Payment failed: " + result.error.message);
-                    } else {
-                        alert("Payment successful! Transaction ID: " + result.id);
-                        window.location.href = "thankyou.html"; // Redirect to Thank You page
-                    }
-                }
-            });
-        });
+            const marker = new tt.Marker().setLngLat([userLocation.lon, userLocation.lat]).addTo(map);
 
-        window.onload = displayItems;
+            map.on("click", (event) => {
+                userLocation = { lat: event.lngLat.lat, lon: event.lngLat.lng };
+                marker.setLngLat([userLocation.lon, userLocation.lat]);
+            });
+        }
+
+        window.onload = function () {
+            displayItems();
+            initMap();
+        };
     </script>
 
 </body>
-    </html>
+</html>
