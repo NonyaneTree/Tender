@@ -1,0 +1,151 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Supplies</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .item {
+            text-align: center;
+            width: 200px;
+        }
+        .item img {
+            width: 150px;
+            height: 150px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+        .item img:hover {
+            transform: scale(1.1);
+        }
+        .item p {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .checkout {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            border-radius: 5px;
+        }
+        .checkout:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Food Supplies (South Africa)</h1>
+    
+    <div class="container">
+        <div class="item">
+            <img src="maize_meal.png" alt="Maize Meal">
+            <p>Maize Meal - R120</p>
+            <input type="checkbox" value="Maize Meal|120">
+        </div>
+
+        <div class="item">
+            <img src="rice.png" alt="Rice">
+            <p>Rice (5kg) - R150</p>
+            <input type="checkbox" value="Rice|150">
+        </div>
+
+        <div class="item">
+            <img src="sugar.png" alt="Sugar">
+            <p>Sugar (2kg) - R50</p>
+            <input type="checkbox" value="Sugar|50">
+        </div>
+
+        <div class="item">
+            <img src="cooking_oil.png" alt="Cooking Oil">
+            <p>Cooking Oil (2L) - R100</p>
+            <input type="checkbox" value="Cooking Oil|100">
+        </div>
+
+        <div class="item">
+            <img src="flour.png" alt="Flour">
+            <p>Flour (2.5kg) - R80</p>
+            <input type="checkbox" value="Flour|80">
+        </div>
+
+        <div class="item">
+            <img src="beans.png" alt="Beans">
+            <p>Beans (1kg) - R60</p>
+            <input type="checkbox" value="Beans|60">
+        </div>
+
+        <div class="item">
+            <img src="bread.png" alt="Bread">
+            <p>White Bread - R18</p>
+            <input type="checkbox" value="Bread|18">
+        </div>
+
+        <div class="item">
+            <img src="milk.png" alt="Milk">
+            <p>Milk (1L) - R25</p>
+            <input type="checkbox" value="Milk|25">
+        </div>
+
+        <div class="item">
+            <img src="eggs.png" alt="Eggs">
+            <p>Eggs (Dozen) - R50</p>
+            <input type="checkbox" value="Eggs|50">
+        </div>
+
+        <div class="item">
+            <img src="tea.png" alt="Tea">
+            <p>Rooibos Tea (40 Bags) - R40</p>
+            <input type="checkbox" value="Tea|40">
+        </div>
+
+        <div class="item">
+            <img src="coffee.png" alt="Coffee">
+            <p>Instant Coffee (200g) - R80</p>
+            <input type="checkbox" value="Coffee|80">
+        </div>
+    </div>
+
+    <button class="checkout" onclick="checkout()">Checkout</button>
+
+    <script>
+        function checkout() {
+            let selectedItems = [];
+            document.querySelectorAll("input[type='checkbox']:checked").forEach(checkbox => {
+                let [name, price] = checkbox.value.split("|");
+                selectedItems.push({ name, price: parseFloat(price) });
+            });
+
+            if (selectedItems.length === 0) {
+                alert("Please select at least one item.");
+                return;
+            }
+
+            // Send selected items to checkout.html
+            const cartData = encodeURIComponent(JSON.stringify(selectedItems));
+            window.location.href = `checkout.html?cart=${cartData}`;
+        }
+    </script>
+
+</body>
+  </html>
