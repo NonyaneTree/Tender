@@ -8,9 +8,38 @@
         body {
             font-family: Arial, sans-serif;
             text-align: center;
+            margin: 0;
+            padding: 0;
         }
         h1 {
             color: #333;
+            margin-top: 20px;
+        }
+        .nav {
+            background-color: #333;
+            padding: 10px 0;
+        }
+        .nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .nav ul li {
+            display: inline;
+        }
+        .nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            padding: 10px 15px;
+            transition: background 0.3s;
+        }
+        .nav ul li a:hover {
+            background-color: #575757;
+            border-radius: 5px;
         }
         .container {
             display: flex;
@@ -40,6 +69,13 @@
     </style>
 </head>
 <body>
+
+    <div class="nav">
+        <ul>
+            <li><a href="driver.html">Driver Site</a></li>
+            <li><a href="profile.html">Profile</a></li>
+        </ul>
+    </div>
 
     <h1>Consumable</h1>
     
@@ -79,27 +115,6 @@
             <p>General Supplies</p>
         </div>
     </div>
-
-    <button id="confirm-location">Confirm Location</button>
-
-    <script>
-        document.getElementById("confirm-location").addEventListener("click", function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    // Get the latitude and longitude
-                    var latitude = position.coords.latitude;
-                    var longitude = position.coords.longitude;
-
-                    // Redirect to driver.html and pass the location as URL parameters
-                    window.location.href = "driver.html?lat=" + latitude + "&lng=" + longitude;
-                }, function(error) {
-                    alert("Error in getting location: " + error.message);
-                });
-            } else {
-                alert("Geolocation is not supported by this browser.");
-            }
-        });
-    </script>
 
 </body>
 </html>
