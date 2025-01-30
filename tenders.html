@@ -1,4 +1,4 @@
-<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -79,6 +79,27 @@
             <p>General Supplies</p>
         </div>
     </div>
+
+    <button id="confirm-location">Confirm Location</button>
+
+    <script>
+        document.getElementById("confirm-location").addEventListener("click", function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    // Get the latitude and longitude
+                    var latitude = position.coords.latitude;
+                    var longitude = position.coords.longitude;
+
+                    // Redirect to driver.html and pass the location as URL parameters
+                    window.location.href = "driver.html?lat=" + latitude + "&lng=" + longitude;
+                }, function(error) {
+                    alert("Error in getting location: " + error.message);
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        });
+    </script>
 
 </body>
 </html>
